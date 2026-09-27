@@ -1,0 +1,35 @@
+{
+  "name": "agrflow2",
+  "version": "1.0.0",
+  "description": "AgriFlow 2 - SOAP Web Service for Fertilizer Subsidy Distribution System",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test:soap": "tsx scripts/test-soap-client.ts",
+    "prisma:generate": "prisma generate"
+  },
+  "keywords": ["agriflow", "soap", "wsdl", "xml", "web-services"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "express": "^4.19.2",
+    "soap": "^1.1.1",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.12",
+    "@types/cors": "^2.8.17",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.6",
+    "prisma": "^5.14.0",
+    "typescript": "^5.4.5",
+    "tsx": "^4.10.1"
+  }
+}

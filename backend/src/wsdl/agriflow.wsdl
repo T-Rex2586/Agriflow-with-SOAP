@@ -1,0 +1,1010 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://agriflow.id/soap"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  name="AgriFlowService"
+                  targetNamespace="http://agriflow.id/soap">
+
+  <!-- ========================================== -->
+  <!-- TYPES / XSD SCHEMA DEFINITION              -->
+  <!-- ========================================== -->
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://agriflow.id/soap" elementFormDefault="qualified">
+
+      <!-- 1. LoginUser -->
+      <xsd:element name="LoginUserRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Email" type="xsd:string"/>
+            <xsd:element name="Password" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="LoginUserResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="UserId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Email" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Name" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Role" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="AccessToken" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 2. RegisterUser -->
+      <xsd:element name="RegisterUserRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Fullname" type="xsd:string"/>
+            <xsd:element name="Email" type="xsd:string"/>
+            <xsd:element name="Password" type="xsd:string"/>
+            <xsd:element name="Role" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="RegisterUserResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="UserId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Email" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Name" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Role" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 3. GetPetaniByNIK -->
+      <xsd:element name="GetPetaniByNIKRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="NIK" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetPetaniByNIKResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Found" type="xsd:boolean"/>
+            <xsd:element name="PetaniId" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NIK" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NamaLengkap" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="NomorHp" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Alamat" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="DesaKelurahan" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Kecamatan" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="KabupatenKota" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Provinsi" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="LuasLahan" type="xsd:decimal" minOccurs="0"/>
+            <xsd:element name="Sektor" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="UserIdPengecer" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="AwalTerdaftar" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="AkhirTerdaftar" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 4. CekKuotaPetani -->
+      <xsd:element name="CekKuotaPetaniRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="PetaniId" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemKuota">
+        <xsd:sequence>
+          <xsd:element name="PupukId" type="xsd:int"/>
+          <xsd:element name="NamaPupuk" type="xsd:string"/>
+          <xsd:element name="SisaKuota" type="xsd:decimal"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="CekKuotaPetaniResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="PetaniId" type="xsd:string"/>
+            <xsd:element name="NamaPetani" type="xsd:string"/>
+            <xsd:element name="ListKuota" type="tns:ItemKuota" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 5. GetPetaniList -->
+      <xsd:element name="GetPetaniListRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserIdPengecer" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemPetaniSummary">
+        <xsd:sequence>
+          <xsd:element name="PetaniId" type="xsd:string"/>
+          <xsd:element name="NamaLengkap" type="xsd:string"/>
+          <xsd:element name="NomorHp" type="xsd:string"/>
+          <xsd:element name="Alamat" type="xsd:string"/>
+          <xsd:element name="LuasLahan" type="xsd:decimal"/>
+          <xsd:element name="Sektor" type="xsd:string"/>
+          <xsd:element name="Status" type="xsd:string"/>
+          <xsd:element name="UserIdPengecer" type="xsd:int"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetPetaniListResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListPetani" type="tns:ItemPetaniSummary" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 6. PenebusanPupuk -->
+      <xsd:element name="PenebusanPupukRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserIdPengecer" type="xsd:int"/>
+            <xsd:element name="PetaniId" type="xsd:string"/>
+            <xsd:element name="PupukId" type="xsd:int"/>
+            <xsd:element name="Jumlah" type="xsd:decimal"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="PenebusanPupukResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="TebusanId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="JumlahDitebus" type="xsd:decimal" minOccurs="0"/>
+            <xsd:element name="SisaKuota" type="xsd:decimal" minOccurs="0"/>
+            <xsd:element name="Timestamp" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 7. GetRiwayatPenebusan -->
+      <xsd:element name="GetRiwayatPenebusanRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserIdPengecer" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemRiwayatPenebusan">
+        <xsd:sequence>
+          <xsd:element name="TebusanId" type="xsd:int"/>
+          <xsd:element name="PetaniId" type="xsd:string"/>
+          <xsd:element name="NamaPetani" type="xsd:string"/>
+          <xsd:element name="PupukId" type="xsd:int"/>
+          <xsd:element name="NamaPupuk" type="xsd:string"/>
+          <xsd:element name="Jumlah" type="xsd:decimal"/>
+          <xsd:element name="Status" type="xsd:string"/>
+          <xsd:element name="Timestamp" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetRiwayatPenebusanResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListRiwayat" type="tns:ItemRiwayatPenebusan" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 8. CekStok & CekStokPengecer -->
+      <xsd:element name="CekStokRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CekStokPengecerRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserIdPengecer" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemStok">
+        <xsd:sequence>
+          <xsd:element name="PupukId" type="xsd:int"/>
+          <xsd:element name="NamaPupuk" type="xsd:string"/>
+          <xsd:element name="JumlahStok" type="xsd:decimal"/>
+          <xsd:element name="TerakhirUpdate" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="CekStokResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="NamaUser" type="xsd:string"/>
+            <xsd:element name="Role" type="xsd:string"/>
+            <xsd:element name="ListStok" type="tns:ItemStok" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CekStokPengecerResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserIdPengecer" type="xsd:int"/>
+            <xsd:element name="NamaPengecer" type="xsd:string"/>
+            <xsd:element name="ListStok" type="tns:ItemStok" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 9. GetRiwayatStok -->
+      <xsd:element name="GetRiwayatStokRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemRiwayatStok">
+        <xsd:sequence>
+          <xsd:element name="RiwayatId" type="xsd:int"/>
+          <xsd:element name="PupukId" type="xsd:int"/>
+          <xsd:element name="NamaPupuk" type="xsd:string"/>
+          <xsd:element name="JumlahAwal" type="xsd:decimal"/>
+          <xsd:element name="JumlahAkhir" type="xsd:decimal"/>
+          <xsd:element name="TipePerubahan" type="xsd:string"/>
+          <xsd:element name="Timestamp" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetRiwayatStokResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListRiwayat" type="tns:ItemRiwayatStok" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 10. AdjustStok -->
+      <xsd:element name="AdjustStokRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="PupukId" type="xsd:int"/>
+            <xsd:element name="JumlahPenyesuaian" type="xsd:decimal"/>
+            <xsd:element name="Keterangan" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="AdjustStokResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="PupukId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="JumlahAwal" type="xsd:decimal" minOccurs="0"/>
+            <xsd:element name="JumlahAkhir" type="xsd:decimal" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 11. CreateKirimanPupuk -->
+      <xsd:element name="CreateKirimanPupukRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserIdDistributor" type="xsd:int"/>
+            <xsd:element name="UserIdPengecer" type="xsd:int"/>
+            <xsd:element name="PupukId" type="xsd:int"/>
+            <xsd:element name="Jumlah" type="xsd:decimal"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CreateKirimanPupukResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="KirimanId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="JumlahDikirim" type="xsd:decimal" minOccurs="0"/>
+            <xsd:element name="NamaPupuk" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 12. TerimaKirimanPupuk -->
+      <xsd:element name="TerimaKirimanPupukRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="KirimanId" type="xsd:int"/>
+            <xsd:element name="UserIdPengecer" type="xsd:int"/>
+            <xsd:element name="JumlahDiterima" type="xsd:decimal" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="TerimaKirimanPupukResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="KirimanId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="JumlahDiterima" type="xsd:decimal" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 13. GetKirimanList -->
+      <xsd:element name="GetKirimanListRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="Role" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemKiriman">
+        <xsd:sequence>
+          <xsd:element name="KirimanId" type="xsd:int"/>
+          <xsd:element name="UserIdDistributor" type="xsd:int"/>
+          <xsd:element name="NamaDistributor" type="xsd:string"/>
+          <xsd:element name="UserIdPengecer" type="xsd:int"/>
+          <xsd:element name="NamaPengecer" type="xsd:string"/>
+          <xsd:element name="PupukId" type="xsd:int"/>
+          <xsd:element name="NamaPupuk" type="xsd:string"/>
+          <xsd:element name="JumlahDikirim" type="xsd:decimal"/>
+          <xsd:element name="JumlahDiterima" type="xsd:decimal"/>
+          <xsd:element name="Status" type="xsd:string"/>
+          <xsd:element name="TimestampDikirim" type="xsd:string"/>
+          <xsd:element name="TimestampDiterima" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetKirimanListResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListKiriman" type="tns:ItemKiriman" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 14. GetNotifikasi -->
+      <xsd:element name="GetNotifikasiRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="UnreadOnly" type="xsd:boolean" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemNotifikasi">
+        <xsd:sequence>
+          <xsd:element name="NotifikasiId" type="xsd:int"/>
+          <xsd:element name="Jenis" type="xsd:string"/>
+          <xsd:element name="Judul" type="xsd:string"/>
+          <xsd:element name="Pesan" type="xsd:string"/>
+          <xsd:element name="StatusDibaca" type="xsd:boolean"/>
+          <xsd:element name="Timestamp" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetNotifikasiResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListNotifikasi" type="tns:ItemNotifikasi" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 15. MarkNotifikasiDibaca -->
+      <xsd:element name="MarkNotifikasiDibacaRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="NotifikasiId" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="MarkNotifikasiDibacaResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 16. GetUnreadCount -->
+      <xsd:element name="GetUnreadCountRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetUnreadCountResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UnreadCount" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 17. GetDashboardPemerintah -->
+      <xsd:element name="GetDashboardPemerintahRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="TahunAwal" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="TahunAkhir" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetDashboardPemerintahResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="TotalTerserapTon" type="xsd:decimal"/>
+            <xsd:element name="TotalSisaKuotaKg" type="xsd:decimal"/>
+            <xsd:element name="TotalAlokasiKg" type="xsd:decimal"/>
+            <xsd:element name="RealisasiPersen" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 18. GetPendingUsers -->
+      <xsd:element name="GetPendingUsersRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Page" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemPendingUser">
+        <xsd:sequence>
+          <xsd:element name="UserId" type="xsd:int"/>
+          <xsd:element name="NamaLengkap" type="xsd:string"/>
+          <xsd:element name="Email" type="xsd:string"/>
+          <xsd:element name="Role" type="xsd:string"/>
+          <xsd:element name="Status" type="xsd:string"/>
+          <xsd:element name="TanggalDaftar" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetPendingUsersResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListUsers" type="tns:ItemPendingUser" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 19. ApproveUser -->
+      <xsd:element name="ApproveUserRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="ApproverId" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ApproveUserResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="UserId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 20. RejectUser -->
+      <xsd:element name="RejectUserRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+            <xsd:element name="ApproverId" type="xsd:int"/>
+            <xsd:element name="Alasan" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="RejectUserResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="UserId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 21. GetDeteksiAnomali -->
+      <xsd:element name="GetDeteksiAnomaliRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="BatasKg" type="xsd:decimal" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemAnomali">
+        <xsd:sequence>
+          <xsd:element name="TebusanId" type="xsd:int"/>
+          <xsd:element name="PetaniId" type="xsd:string"/>
+          <xsd:element name="NamaPetani" type="xsd:string"/>
+          <xsd:element name="NamaPengecer" type="xsd:string"/>
+          <xsd:element name="PupukId" type="xsd:int"/>
+          <xsd:element name="NamaPupuk" type="xsd:string"/>
+          <xsd:element name="JumlahKg" type="xsd:decimal"/>
+          <xsd:element name="AlasanAnomali" type="xsd:string"/>
+          <xsd:element name="Timestamp" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetDeteksiAnomaliResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="TotalAnomali" type="xsd:int"/>
+            <xsd:element name="BatasAmbangKg" type="xsd:decimal"/>
+            <xsd:element name="ListAnomali" type="tns:ItemAnomali" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 22. CreateBantuan -->
+      <xsd:element name="CreateBantuanRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="FirstName" type="xsd:string"/>
+            <xsd:element name="MiddleName" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="LastName" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Email" type="xsd:string"/>
+            <xsd:element name="Topik" type="xsd:string"/>
+            <xsd:element name="Ringkasan" type="xsd:string"/>
+            <xsd:element name="UserId" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CreateBantuanResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Message" type="xsd:string"/>
+            <xsd:element name="BantuanId" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="Topik" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Email" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 23. GetBantuanList -->
+      <xsd:element name="GetBantuanListRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Topik" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemBantuan">
+        <xsd:sequence>
+          <xsd:element name="BantuanId" type="xsd:int"/>
+          <xsd:element name="NamaPengirim" type="xsd:string"/>
+          <xsd:element name="Email" type="xsd:string"/>
+          <xsd:element name="Topik" type="xsd:string"/>
+          <xsd:element name="Ringkasan" type="xsd:string"/>
+          <xsd:element name="Timestamp" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetBantuanListResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListTiket" type="tns:ItemBantuan" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </wsdl:types>
+
+  <!-- ========================================== -->
+  <!-- MESSAGES                                   -->
+  <!-- ========================================== -->
+  <wsdl:message name="LoginUserSoapIn"><wsdl:part name="parameters" element="tns:LoginUserRequest"/></wsdl:message>
+  <wsdl:message name="LoginUserSoapOut"><wsdl:part name="parameters" element="tns:LoginUserResponse"/></wsdl:message>
+
+  <wsdl:message name="RegisterUserSoapIn"><wsdl:part name="parameters" element="tns:RegisterUserRequest"/></wsdl:message>
+  <wsdl:message name="RegisterUserSoapOut"><wsdl:part name="parameters" element="tns:RegisterUserResponse"/></wsdl:message>
+
+  <wsdl:message name="GetPetaniByNIKSoapIn"><wsdl:part name="parameters" element="tns:GetPetaniByNIKRequest"/></wsdl:message>
+  <wsdl:message name="GetPetaniByNIKSoapOut"><wsdl:part name="parameters" element="tns:GetPetaniByNIKResponse"/></wsdl:message>
+
+  <wsdl:message name="CekKuotaPetaniSoapIn"><wsdl:part name="parameters" element="tns:CekKuotaPetaniRequest"/></wsdl:message>
+  <wsdl:message name="CekKuotaPetaniSoapOut"><wsdl:part name="parameters" element="tns:CekKuotaPetaniResponse"/></wsdl:message>
+
+  <wsdl:message name="GetPetaniListSoapIn"><wsdl:part name="parameters" element="tns:GetPetaniListRequest"/></wsdl:message>
+  <wsdl:message name="GetPetaniListSoapOut"><wsdl:part name="parameters" element="tns:GetPetaniListResponse"/></wsdl:message>
+
+  <wsdl:message name="PenebusanPupukSoapIn"><wsdl:part name="parameters" element="tns:PenebusanPupukRequest"/></wsdl:message>
+  <wsdl:message name="PenebusanPupukSoapOut"><wsdl:part name="parameters" element="tns:PenebusanPupukResponse"/></wsdl:message>
+
+  <wsdl:message name="GetRiwayatPenebusanSoapIn"><wsdl:part name="parameters" element="tns:GetRiwayatPenebusanRequest"/></wsdl:message>
+  <wsdl:message name="GetRiwayatPenebusanSoapOut"><wsdl:part name="parameters" element="tns:GetRiwayatPenebusanResponse"/></wsdl:message>
+
+  <wsdl:message name="CekStokSoapIn"><wsdl:part name="parameters" element="tns:CekStokRequest"/></wsdl:message>
+  <wsdl:message name="CekStokSoapOut"><wsdl:part name="parameters" element="tns:CekStokResponse"/></wsdl:message>
+
+  <wsdl:message name="CekStokPengecerSoapIn"><wsdl:part name="parameters" element="tns:CekStokPengecerRequest"/></wsdl:message>
+  <wsdl:message name="CekStokPengecerSoapOut"><wsdl:part name="parameters" element="tns:CekStokPengecerResponse"/></wsdl:message>
+
+  <wsdl:message name="GetRiwayatStokSoapIn"><wsdl:part name="parameters" element="tns:GetRiwayatStokRequest"/></wsdl:message>
+  <wsdl:message name="GetRiwayatStokSoapOut"><wsdl:part name="parameters" element="tns:GetRiwayatStokResponse"/></wsdl:message>
+
+  <wsdl:message name="AdjustStokSoapIn"><wsdl:part name="parameters" element="tns:AdjustStokRequest"/></wsdl:message>
+  <wsdl:message name="AdjustStokSoapOut"><wsdl:part name="parameters" element="tns:AdjustStokResponse"/></wsdl:message>
+
+  <wsdl:message name="CreateKirimanPupukSoapIn"><wsdl:part name="parameters" element="tns:CreateKirimanPupukRequest"/></wsdl:message>
+  <wsdl:message name="CreateKirimanPupukSoapOut"><wsdl:part name="parameters" element="tns:CreateKirimanPupukResponse"/></wsdl:message>
+
+  <wsdl:message name="TerimaKirimanPupukSoapIn"><wsdl:part name="parameters" element="tns:TerimaKirimanPupukRequest"/></wsdl:message>
+  <wsdl:message name="TerimaKirimanPupukSoapOut"><wsdl:part name="parameters" element="tns:TerimaKirimanPupukResponse"/></wsdl:message>
+
+  <wsdl:message name="GetKirimanListSoapIn"><wsdl:part name="parameters" element="tns:GetKirimanListRequest"/></wsdl:message>
+  <wsdl:message name="GetKirimanListSoapOut"><wsdl:part name="parameters" element="tns:GetKirimanListResponse"/></wsdl:message>
+
+  <wsdl:message name="GetNotifikasiSoapIn"><wsdl:part name="parameters" element="tns:GetNotifikasiRequest"/></wsdl:message>
+  <wsdl:message name="GetNotifikasiSoapOut"><wsdl:part name="parameters" element="tns:GetNotifikasiResponse"/></wsdl:message>
+
+  <wsdl:message name="MarkNotifikasiDibacaSoapIn"><wsdl:part name="parameters" element="tns:MarkNotifikasiDibacaRequest"/></wsdl:message>
+  <wsdl:message name="MarkNotifikasiDibacaSoapOut"><wsdl:part name="parameters" element="tns:MarkNotifikasiDibacaResponse"/></wsdl:message>
+
+  <wsdl:message name="GetUnreadCountSoapIn"><wsdl:part name="parameters" element="tns:GetUnreadCountRequest"/></wsdl:message>
+  <wsdl:message name="GetUnreadCountSoapOut"><wsdl:part name="parameters" element="tns:GetUnreadCountResponse"/></wsdl:message>
+
+  <wsdl:message name="GetDashboardPemerintahSoapIn"><wsdl:part name="parameters" element="tns:GetDashboardPemerintahRequest"/></wsdl:message>
+  <wsdl:message name="GetDashboardPemerintahSoapOut"><wsdl:part name="parameters" element="tns:GetDashboardPemerintahResponse"/></wsdl:message>
+
+  <wsdl:message name="GetPendingUsersSoapIn"><wsdl:part name="parameters" element="tns:GetPendingUsersRequest"/></wsdl:message>
+  <wsdl:message name="GetPendingUsersSoapOut"><wsdl:part name="parameters" element="tns:GetPendingUsersResponse"/></wsdl:message>
+
+  <wsdl:message name="ApproveUserSoapIn"><wsdl:part name="parameters" element="tns:ApproveUserRequest"/></wsdl:message>
+  <wsdl:message name="ApproveUserSoapOut"><wsdl:part name="parameters" element="tns:ApproveUserResponse"/></wsdl:message>
+
+  <wsdl:message name="RejectUserSoapIn"><wsdl:part name="parameters" element="tns:RejectUserRequest"/></wsdl:message>
+  <wsdl:message name="RejectUserSoapOut"><wsdl:part name="parameters" element="tns:RejectUserResponse"/></wsdl:message>
+
+  <wsdl:message name="GetDeteksiAnomaliSoapIn"><wsdl:part name="parameters" element="tns:GetDeteksiAnomaliRequest"/></wsdl:message>
+  <wsdl:message name="GetDeteksiAnomaliSoapOut"><wsdl:part name="parameters" element="tns:GetDeteksiAnomaliResponse"/></wsdl:message>
+
+  <wsdl:message name="CreateBantuanSoapIn"><wsdl:part name="parameters" element="tns:CreateBantuanRequest"/></wsdl:message>
+  <wsdl:message name="CreateBantuanSoapOut"><wsdl:part name="parameters" element="tns:CreateBantuanResponse"/></wsdl:message>
+
+  <wsdl:message name="GetBantuanListSoapIn"><wsdl:part name="parameters" element="tns:GetBantuanListRequest"/></wsdl:message>
+  <wsdl:message name="GetBantuanListSoapOut"><wsdl:part name="parameters" element="tns:GetBantuanListResponse"/></wsdl:message>
+
+  <!-- ========================================== -->
+  <!-- PORT TYPE DEFINITION                       -->
+  <!-- ========================================== -->
+  <wsdl:portType name="AgriFlowSoapPort">
+    <wsdl:operation name="LoginUser">
+      <wsdl:input message="tns:LoginUserSoapIn"/>
+      <wsdl:output message="tns:LoginUserSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="RegisterUser">
+      <wsdl:input message="tns:RegisterUserSoapIn"/>
+      <wsdl:output message="tns:RegisterUserSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetPetaniByNIK">
+      <wsdl:input message="tns:GetPetaniByNIKSoapIn"/>
+      <wsdl:output message="tns:GetPetaniByNIKSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CekKuotaPetani">
+      <wsdl:input message="tns:CekKuotaPetaniSoapIn"/>
+      <wsdl:output message="tns:CekKuotaPetaniSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetPetaniList">
+      <wsdl:input message="tns:GetPetaniListSoapIn"/>
+      <wsdl:output message="tns:GetPetaniListSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="PenebusanPupuk">
+      <wsdl:input message="tns:PenebusanPupukSoapIn"/>
+      <wsdl:output message="tns:PenebusanPupukSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetRiwayatPenebusan">
+      <wsdl:input message="tns:GetRiwayatPenebusanSoapIn"/>
+      <wsdl:output message="tns:GetRiwayatPenebusanSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CekStok">
+      <wsdl:input message="tns:CekStokSoapIn"/>
+      <wsdl:output message="tns:CekStokSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CekStokPengecer">
+      <wsdl:input message="tns:CekStokPengecerSoapIn"/>
+      <wsdl:output message="tns:CekStokPengecerSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetRiwayatStok">
+      <wsdl:input message="tns:GetRiwayatStokSoapIn"/>
+      <wsdl:output message="tns:GetRiwayatStokSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="AdjustStok">
+      <wsdl:input message="tns:AdjustStokSoapIn"/>
+      <wsdl:output message="tns:AdjustStokSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateKirimanPupuk">
+      <wsdl:input message="tns:CreateKirimanPupukSoapIn"/>
+      <wsdl:output message="tns:CreateKirimanPupukSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="TerimaKirimanPupuk">
+      <wsdl:input message="tns:TerimaKirimanPupukSoapIn"/>
+      <wsdl:output message="tns:TerimaKirimanPupukSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetKirimanList">
+      <wsdl:input message="tns:GetKirimanListSoapIn"/>
+      <wsdl:output message="tns:GetKirimanListSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetNotifikasi">
+      <wsdl:input message="tns:GetNotifikasiSoapIn"/>
+      <wsdl:output message="tns:GetNotifikasiSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="MarkNotifikasiDibaca">
+      <wsdl:input message="tns:MarkNotifikasiDibacaSoapIn"/>
+      <wsdl:output message="tns:MarkNotifikasiDibacaSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetUnreadCount">
+      <wsdl:input message="tns:GetUnreadCountSoapIn"/>
+      <wsdl:output message="tns:GetUnreadCountSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetDashboardPemerintah">
+      <wsdl:input message="tns:GetDashboardPemerintahSoapIn"/>
+      <wsdl:output message="tns:GetDashboardPemerintahSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetPendingUsers">
+      <wsdl:input message="tns:GetPendingUsersSoapIn"/>
+      <wsdl:output message="tns:GetPendingUsersSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="ApproveUser">
+      <wsdl:input message="tns:ApproveUserSoapIn"/>
+      <wsdl:output message="tns:ApproveUserSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="RejectUser">
+      <wsdl:input message="tns:RejectUserSoapIn"/>
+      <wsdl:output message="tns:RejectUserSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetDeteksiAnomali">
+      <wsdl:input message="tns:GetDeteksiAnomaliSoapIn"/>
+      <wsdl:output message="tns:GetDeteksiAnomaliSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateBantuan">
+      <wsdl:input message="tns:CreateBantuanSoapIn"/>
+      <wsdl:output message="tns:CreateBantuanSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetBantuanList">
+      <wsdl:input message="tns:GetBantuanListSoapIn"/>
+      <wsdl:output message="tns:GetBantuanListSoapOut"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <!-- ========================================== -->
+  <!-- BINDING DEFINITION (SOAP 1.1 HTTP)         -->
+  <!-- ========================================== -->
+  <wsdl:binding name="AgriFlowSoapBinding" type="tns:AgriFlowSoapPort">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+
+    <wsdl:operation name="LoginUser">
+      <soap:operation soapAction="http://agriflow.id/soap/LoginUser"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="RegisterUser">
+      <soap:operation soapAction="http://agriflow.id/soap/RegisterUser"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetPetaniByNIK">
+      <soap:operation soapAction="http://agriflow.id/soap/GetPetaniByNIK"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CekKuotaPetani">
+      <soap:operation soapAction="http://agriflow.id/soap/CekKuotaPetani"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetPetaniList">
+      <soap:operation soapAction="http://agriflow.id/soap/GetPetaniList"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="PenebusanPupuk">
+      <soap:operation soapAction="http://agriflow.id/soap/PenebusanPupuk"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetRiwayatPenebusan">
+      <soap:operation soapAction="http://agriflow.id/soap/GetRiwayatPenebusan"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CekStok">
+      <soap:operation soapAction="http://agriflow.id/soap/CekStok"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CekStokPengecer">
+      <soap:operation soapAction="http://agriflow.id/soap/CekStokPengecer"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetRiwayatStok">
+      <soap:operation soapAction="http://agriflow.id/soap/GetRiwayatStok"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="AdjustStok">
+      <soap:operation soapAction="http://agriflow.id/soap/AdjustStok"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateKirimanPupuk">
+      <soap:operation soapAction="http://agriflow.id/soap/CreateKirimanPupuk"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="TerimaKirimanPupuk">
+      <soap:operation soapAction="http://agriflow.id/soap/TerimaKirimanPupuk"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetKirimanList">
+      <soap:operation soapAction="http://agriflow.id/soap/GetKirimanList"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetNotifikasi">
+      <soap:operation soapAction="http://agriflow.id/soap/GetNotifikasi"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="MarkNotifikasiDibaca">
+      <soap:operation soapAction="http://agriflow.id/soap/MarkNotifikasiDibaca"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetUnreadCount">
+      <soap:operation soapAction="http://agriflow.id/soap/GetUnreadCount"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetDashboardPemerintah">
+      <soap:operation soapAction="http://agriflow.id/soap/GetDashboardPemerintah"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetPendingUsers">
+      <soap:operation soapAction="http://agriflow.id/soap/GetPendingUsers"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="ApproveUser">
+      <soap:operation soapAction="http://agriflow.id/soap/ApproveUser"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="RejectUser">
+      <soap:operation soapAction="http://agriflow.id/soap/RejectUser"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetDeteksiAnomali">
+      <soap:operation soapAction="http://agriflow.id/soap/GetDeteksiAnomali"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateBantuan">
+      <soap:operation soapAction="http://agriflow.id/soap/CreateBantuan"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetBantuanList">
+      <soap:operation soapAction="http://agriflow.id/soap/GetBantuanList"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <!-- ========================================== -->
+  <!-- SERVICE DEFINITION                         -->
+  <!-- ========================================== -->
+  <wsdl:service name="AgriFlowSoapService">
+    <wsdl:documentation>AgriFlow 2 - Layanan Web Service Distribusi Pupuk Bersubsidi Terintegrasi (SOAP 1.1/WSDL 1.1)</wsdl:documentation>
+    <wsdl:port name="AgriFlowSoapPort" binding="tns:AgriFlowSoapBinding">
+      <soap:address location="http://localhost:8002/soap/agriflow"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

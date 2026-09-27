@@ -1,0 +1,14 @@
+{
+  "name": "agrflow2-root",
+  "version": "1.0.0",
+  "description": "AgriFlow 2 - Fullstack SOAP 1.1 Web Services (Backend & Frontend Client)",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "test:soap": "cd backend && npm run test:soap",
+    "prisma:generate": "cd backend && npm run prisma:generate"
+  },
+  "keywords": ["agriflow", "soap", "wsdl", "xml", "fullstack"],
+  "author": "",
+  "license": "ISC"
+}

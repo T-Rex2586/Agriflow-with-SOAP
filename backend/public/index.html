@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriFlow 2 - SOAP Web Service Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1e6b1e;
+      --primary-dark: #144914;
+      --primary-light: #e8f5e9;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #22c55e;
+      --font: 'Plus Jakarta Sans', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-soap {
+      background: #3b82f6;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .sub-title {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-link {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .btn-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .sidebar {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+    }
+
+    .sidebar h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .op-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .op-btn {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 8px;
+      text-align: left;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .op-btn:hover {
+      border-color: var(--accent);
+      background: #1e293b;
+    }
+
+    .op-btn.active {
+      border-color: var(--accent);
+      background: rgba(34, 197, 94, 0.1);
+      color: var(--accent);
+    }
+
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 220px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #38bdf8;
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 14px;
+      border-radius: 8px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn-send {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-send:hover {
+      background: #15803d;
+    }
+
+    .status-tag {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: var(--mono);
+    }
+
+    .status-ok { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .status-err { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <span style="font-size: 28px;">🌾</span>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1>AgriFlow 2</h1>
+            <span class="badge-soap">SOAP 1.1 / WSDL</span>
+          </div>
+          <p class="sub-title">Web Service Arsitektur XML untuk Sistem Subsidi Pupuk Terintegrasi</p>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a href="/soap/agriflow?wsdl" target="_blank" class="btn-link">📄 Buka WSDL Contract</a>
+        <a href="/health" target="_blank" class="btn-link">🩺 Healthcheck</a>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- SIDEBAR: DAFTAR OPERASI -->
+      <div class="sidebar">
+        <h2>Operasi SOAP</h2>
+        <div class="op-list">
+          <button class="op-btn active" onclick="selectOp('LoginUser')">
+            <span>1. LoginUser</span>
+            <span>🔑</span>
+          </button>
+          <button class="op-btn" onclick="selectOp('GetPetaniByNIK')">
+            <span>2. GetPetaniByNIK</span>
+            <span>👨‍🌾</span>
+          </button>
+          <button class="op-btn" onclick="selectOp('CekKuotaPetani')">
+            <span>3. CekKuotaPetani</span>
+            <span>📊</span>
+          </button>
+          <button class="op-btn" onclick="selectOp('PenebusanPupuk')">
+            <span>4. PenebusanPupuk</span>
+            <span>📦</span>
+          </button>
+          <button class="op-btn" onclick="selectOp('CekStokPengecer')">
+            <span>5. CekStokPengecer</span>
+            <span>🏪</span>
+          </button>
+          <button class="op-btn" onclick="selectOp('GetDashboardPemerintah')">
+            <span>6. Dashboard Pemerintah</span>
+            <span>🏛️</span>
+          </button>
+        </div>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted);">
+          <strong>Endpoint Target:</strong><br>
+          <code style="color: var(--accent);">POST /soap/agriflow</code><br><br>
+          <strong>Content-Type:</strong><br>
+          <code>text/xml; charset=utf-8</code>
+        </div>
+      </div>
+
+      <!-- MAIN: REQUEST & RESPONSE -->
+      <div class="main-panel">
+        <!-- REQUEST BOX -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📨 SOAP XML Request Envelope</span>
+            <button class="btn-send" id="btnSubmit" onclick="sendSoapRequest()">
+              <span>Kirim SOAP Request</span> 🚀
+            </button>
+          </div>
+          <textarea id="xmlRequest"></textarea>
+        </div>
+
+        <!-- RESPONSE BOX -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📬 SOAP XML Response</span>
+            <span id="resStatus" class="status-tag status-ok">Menunggu Request...</span>
+          </div>
+          <textarea id="xmlResponse" readonly placeholder="Respon dari server SOAP akan muncul di sini..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const templates = {
+      LoginUser: `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:agr="http://agriflow.id/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <agr:LoginUserRequest>
+         <agr:Email>pemerintah@agriflow.id</agr:Email>
+         <agr:Password>PasswordAman123!</agr:Password>
+      </agr:LoginUserRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`,
+
+      GetPetaniByNIK: `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:agr="http://agriflow.id/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <agr:GetPetaniByNIKRequest>
+         <agr:NIK>3301010101700001</agr:NIK>
+      </agr:GetPetaniByNIKRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`,
+
+      CekKuotaPetani: `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:agr="http://agriflow.id/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <agr:CekKuotaPetaniRequest>
+         <agr:PetaniId>3301010101700001</agr:PetaniId>
+      </agr:CekKuotaPetaniRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`,
+
+      PenebusanPupuk: `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:agr="http://agriflow.id/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <agr:PenebusanPupukRequest>
+         <agr:UserIdPengecer>2</agr:UserIdPengecer>
+         <agr:PetaniId>3301010101700001</agr:PetaniId>
+         <agr:PupukId>1</agr:PupukId>
+         <agr:Jumlah>25.0</agr:Jumlah>
+      </agr:PenebusanPupukRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`,
+
+      CekStokPengecer: `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:agr="http://agriflow.id/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <agr:CekStokPengecerRequest>
+         <agr:UserIdPengecer>2</agr:UserIdPengecer>
+      </agr:CekStokPengecerRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`,
+
+      GetDashboardPemerintah: `<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:agr="http://agriflow.id/soap">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <agr:GetDashboardPemerintahRequest>
+         <agr:TahunAwal>2024</agr:TahunAwal>
+         <agr:TahunAkhir>2026</agr:TahunAkhir>
+      </agr:GetDashboardPemerintahRequest>
+   </soapenv:Body>
+</soapenv:Envelope>`
+    };
+
+    let currentOp = 'LoginUser';
+    document.getElementById('xmlRequest').value = templates.LoginUser;
+
+    function selectOp(opName) {
+      currentOp = opName;
+      document.querySelectorAll('.op-btn').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById('xmlRequest').value = templates[opName] || '';
+      document.getElementById('xmlResponse').value = '';
+      document.getElementById('resStatus').className = 'status-tag status-ok';
+      document.getElementById('resStatus').innerText = 'Siap Kirim';
+    }
+
+    async function sendSoapRequest() {
+      const xmlBody = document.getElementById('xmlRequest').value;
+      const resStatus = document.getElementById('resStatus');
+      const btn = document.getElementById('btnSubmit');
+
+      resStatus.className = 'status-tag status-ok';
+      resStatus.innerText = 'Mengirim...';
+      btn.disabled = true;
+
+      try {
+        const startTime = performance.now();
+        const response = await fetch('/soap/agriflow', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml; charset=utf-8',
+            'SOAPAction': `http://agriflow.id/soap/${currentOp}`
+          },
+          body: xmlBody
+        });
+
+        const elapsed = Math.round(performance.now() - startTime);
+        const text = await response.text();
+
+        document.getElementById('xmlResponse').value = text;
+        if (response.ok) {
+          resStatus.className = 'status-tag status-ok';
+          resStatus.innerText = `HTTP ${response.status} OK (${elapsed}ms)`;
+        } else {
+          resStatus.className = 'status-tag status-err';
+          resStatus.innerText = `HTTP ${response.status} (${elapsed}ms)`;
+        }
+      } catch (err) {
+        document.getElementById('xmlResponse').value = `Network Error: ${err.message}`;
+        resStatus.className = 'status-tag status-err';
+        resStatus.innerText = 'Gagal Terhubung';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
