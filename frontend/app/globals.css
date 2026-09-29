@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --green-50: #f0f9f0;
+  --green-100: #dcf0dc;
+  --green-200: #b8e0b8;
+  --green-300: #86c886;
+  --green-400: #4da84d;
+  --green-500: #2d8a2d;
+  --green-600: #1e6b1e;
+  --green-700: #155215;
+  --green-800: #0f3d0f;
+  --green-900: #0a2a0a;
+
+  --color-primary: var(--green-600);
+  --color-primary-dark: var(--green-800);
+  --color-primary-light: var(--green-400);
+  --color-accent: var(--green-300);
+  --color-bg: #f5faf0;
+  --color-surface: #ffffff;
+  --color-text: #0f3d0f;
+  --color-text-muted: #4a7a4a;
+  --color-border: #c8e6c8;
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(15, 61, 15, 0.08);
+  --shadow-md: 0 4px 16px rgba(15, 61, 15, 0.12);
+  --shadow-lg: 0 8px 32px rgba(15, 61, 15, 0.16);
+  --shadow-xl: 0 16px 48px rgba(15, 61, 15, 0.2);
+}
+
+[data-theme='dark'], .dark {
+  --green-50: #0d1a0d;
+  --green-100: #142914;
+  --green-200: #1c3b1c;
+  --green-300: #295629;
+  --green-400: #3f7e3f;
+  --green-500: #5cb85c;
+  --green-600: #6ec46e;
+  --green-700: #93d693;
+  --green-800: #c2e8c2;
+  --green-900: #edf7ed;
+
+  --color-primary: #5cb85c;
+  --color-primary-dark: #1e6b1e;
+  --color-primary-light: #86c886;
+  --color-accent: #a3e0a3;
+  --color-bg: #0b140b;
+  --color-surface: #142414;
+  --color-text: #eef7ee;
+  --color-text-muted: #9dc29d;
+  --color-border: #1f381f;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.2;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+}
+
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
