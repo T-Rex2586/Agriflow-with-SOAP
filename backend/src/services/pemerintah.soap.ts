@@ -1,17 +1,17 @@
-import prisma from '../database/prisma';
+import { PemerintahService } from '../modules/pemerintah/pemerintah.service';
 
-function esc(val: string | null | undefined): string {
-  if (val === null || val === undefined) return 'NULL';
-  return `'${String(val).replace(/'/g, "''")}'`;
-}
+const service = new PemerintahService();
 
 export interface GetDashboardPemerintahArgs {
   TahunAwal?: number;
   TahunAkhir?: number;
+  Provinsi?: string;
+  PupukId?: number;
 }
 
 export interface GetPendingUsersArgs {
   Page?: number;
+  PageSize?: number;
 }
 
 export interface ApproveUserArgs {
@@ -26,275 +26,300 @@ export interface RejectUserArgs {
 }
 
 export interface GetDeteksiAnomaliArgs {
+  UserId?: number;
   BatasKg?: number;
+  Page?: number;
 }
 
+export interface GetStockTimeSeriesArgs {
+  Weeks?: number;
+}
+
+export interface GetUsersByStatusArgs {
+  Status?: string;
+  Page?: number;
+  PageSize?: number;
+}
+
+export interface GetTopNotificationsArgs {
+  UserId: number;
+}
+
+export interface GetHelpRequestsArgs {
+  Page?: number;
+}
+
+// ========================================================
+// 🔐 SIGNED SOAP OPERATIONS (Wajib WS-Security Signature)
+// ========================================================
+
+/**
+ * 1. GetDashboardPemerintah [SIGNED SOAP]
+ */
 export async function getDashboardPemerintahSoap(args: GetDashboardPemerintahArgs) {
   try {
-    const { TahunAwal, TahunAkhir } = args;
-
-    const whereClause: any = {
-      Status: { in: ['Selesai', 'Berhasil'] },
-    };
-
-    if (TahunAwal) {
-      whereClause.TimestampPenebusan = {
-        gte: new Date(`${TahunAwal}-01-01`),
-      };
-    }
-    if (TahunAkhir) {
-      whereClause.TimestampPenebusan = {
-        ...(whereClause.TimestampPenebusan || {}),
-        lt: new Date(`${TahunAkhir + 1}-01-01`),
-      };
-    }
-
-    const [tebusAggregate, kuotaAggregate] = await Promise.all([
-      prisma.penebusanPupuk.aggregate({
-        _sum: { Jumlah: true },
-        where: whereClause,
-      }),
-      prisma.kuotaPetani.aggregate({
-        _sum: { SisaKuota: true },
-      }),
-    ]);
-
-    const totalDitebusKg = Number(tebusAggregate._sum.Jumlah || 0);
-    const totalSisaKuotaKg = Number(kuotaAggregate._sum.SisaKuota || 0);
-    const totalAlokasiKg = totalDitebusKg + totalSisaKuotaKg;
-
-    const totalTerserapTon = totalDitebusKg / 1000;
-    const realisasiPersen =
-      totalAlokasiKg > 0 ? ((totalDitebusKg / totalAlokasiKg) * 100).toFixed(2) + '%' : '0.00%';
-
-    return {
-      TotalTerserapTon: Number(totalTerserapTon.toFixed(2)),
-      TotalSisaKuotaKg: Number(totalSisaKuotaKg.toFixed(2)),
-      TotalAlokasiKg: Number(totalAlokasiKg.toFixed(2)),
-      RealisasiPersen: realisasiPersen,
-    };
-  } catch (error: any) {
-    return {
-      TotalTerserapTon: 0,
-      TotalSisaKuotaKg: 0,
-      TotalAlokasiKg: 0,
-      RealisasiPersen: '0.00%',
-    };
-  }
-}
-
-export async function getPendingUsersSoap(_args: GetPendingUsersArgs) {
-  try {
-    const users = await prisma.user.findMany({
-      where: {
-        Status: 'Pending',
-      },
-      include: {
-        Role: true,
-      },
-      orderBy: {
-        CreatedAt: 'desc',
-      },
+    const rawData = await service.getDashboard({
+      tahunAwal: args.TahunAwal ? Number(args.TahunAwal) : undefined,
+      tahunAkhir: args.TahunAkhir ? Number(args.TahunAkhir) : undefined,
+      provinsi: args.Provinsi || undefined,
+      pupukId: args.PupukId ? Number(args.PupukId) : undefined,
     });
-
-    const listUsers = users.map((u) => {
-      const nama = [u.FirstName, u.MiddleName, u.LastName].filter(Boolean).join(' ');
-      return {
-        UserId: u.UserId,
-        NamaLengkap: nama,
-        Email: u.Email,
-        Role: u.Role.RoleName,
-        Status: u.Status,
-        TanggalDaftar: u.CreatedAt.toISOString(),
-      };
-    });
-
-    return {
-      Total: listUsers.length,
-      ListUsers: listUsers,
-    };
-  } catch (error: any) {
-    return {
-      Total: 0,
-      ListUsers: [],
-    };
-  }
-}
-
-export async function approveUserSoap(args: ApproveUserArgs) {
-  try {
-    const { UserId, ApproverId } = args;
-    const targetUserId = Number(UserId);
-    const approverIdNum = Number(ApproverId);
-
-    if (!targetUserId || !approverIdNum) {
-      return {
-        Success: false,
-        Message: 'UserId dan ApproverId wajib diisi',
-      };
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { UserId: targetUserId },
-    });
-
-    if (!user) {
-      return {
-        Success: false,
-        Message: 'Pengguna tidak ditemukan',
-      };
-    }
-
-    await prisma.user.update({
-      where: { UserId: targetUserId },
-      data: {
-        Status: 'Active',
-        UserIdPenyetuju: approverIdNum,
-        TimestampDisetujui: new Date(),
-      },
-    });
-
-    try {
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO evt.LOG_AKTIVITAS (LogId, Aksi, Deskripsi, UserId, Timestamp)
-        VALUES (
-          (SELECT ISNULL(MAX(LogId), 0) + 1 FROM evt.LOG_AKTIVITAS WITH (TABLOCKX)),
-          'APPROVE_USER',
-          ${esc(`Pemerintah (ID: ${approverIdNum}) menyetujui akun: ${user.Email}`)},
-          ${approverIdNum},
-          GETDATE()
-        )
-      `);
-    } catch (logErr: any) {
-      console.error('[SOAP-LOG-ERROR]', logErr?.message);
-    }
 
     return {
       Success: true,
-      Message: `Akun ${user.Email} berhasil disetujui dan diaktifkan via SOAP`,
+      TotalTerserapTon: rawData.totalAbsorbed?.TotalTerserapTon || '0',
+      RealisasiPersen: rawData.realizationPercent?.RealisasiPersen || '0.00',
+      TopProvinces: rawData.topProvinces || [],
+      MapByProvince: rawData.mapByProvince || [],
+      MonthlyTrend: rawData.monthlyTrend || [],
+      TopSectors: rawData.topSectors || [],
+    };
+  } catch (error: any) {
+    return {
+      Success: false,
+      TotalTerserapTon: '0',
+      RealisasiPersen: '0.00',
+      TopProvinces: [],
+      MapByProvince: [],
+      MonthlyTrend: [],
+      TopSectors: [],
+      Error: error.message,
+    };
+  }
+}
+
+/**
+ * 2. GetPendingUsers [SIGNED SOAP]
+ */
+export async function getPendingUsersSoap(args: GetPendingUsersArgs) {
+  try {
+    const page = Number(args.Page) || 1;
+    const pageSize = Number(args.PageSize) || 10;
+    const res = await service.getPendingUsers(page, pageSize);
+
+    return {
+      Success: true,
+      Summary: res.summary?.[0] || { Total: 0, TotalAktif: 0, TotalDitolak: 0 },
+      Total: res.pendingUsers.length,
+      ListUsers: res.pendingUsers.map((u: any) => ({
+        No: u.No,
+        UserId: u.UserId,
+        NamaLengkap: u.NamaLengkap,
+        Email: u.Email,
+        Role: u.Role,
+        RegistrationProof: u.RegistrationProof || '',
+        TotalRows: u.TotalRows,
+      })),
+    };
+  } catch (error: any) {
+    return {
+      Success: false,
+      Summary: { Total: 0, TotalAktif: 0, TotalDitolak: 0 },
+      Total: 0,
+      ListUsers: [],
+      Error: error.message,
+    };
+  }
+}
+
+/**
+ * 3. ApproveUser [SIGNED SOAP]
+ */
+export async function approveUserSoap(args: ApproveUserArgs) {
+  try {
+    const targetUserId = Number(args.UserId);
+    const approverId = Number(args.ApproverId);
+    if (!targetUserId || !approverId) {
+      return { Success: false, Message: 'UserId dan ApproverId wajib diisi' };
+    }
+
+    const res = await service.approveUser(targetUserId, approverId);
+    return {
+      Success: true,
+      Message: res.message || 'User berhasil disetujui via Signed SOAP',
       UserId: targetUserId,
       Status: 'Active',
     };
   } catch (error: any) {
     return {
       Success: false,
-      Message: `Gagal menyetujui akun: ${error.message}`,
+      Message: error.message || 'Gagal menyetujui user',
     };
   }
 }
 
+/**
+ * 4. RejectUser [SIGNED SOAP]
+ */
 export async function rejectUserSoap(args: RejectUserArgs) {
   try {
-    const { UserId, ApproverId, Alasan } = args;
-    const targetUserId = Number(UserId);
-    const approverIdNum = Number(ApproverId);
-
-    if (!targetUserId || !approverIdNum) {
-      return {
-        Success: false,
-        Message: 'UserId dan ApproverId wajib diisi',
-      };
+    const targetUserId = Number(args.UserId);
+    const approverId = Number(args.ApproverId);
+    if (!targetUserId || !approverId) {
+      return { Success: false, Message: 'UserId dan ApproverId wajib diisi' };
     }
 
-    const user = await prisma.user.findUnique({
-      where: { UserId: targetUserId },
-    });
-
-    if (!user) {
-      return {
-        Success: false,
-        Message: 'Pengguna tidak ditemukan',
-      };
-    }
-
-    await prisma.user.update({
-      where: { UserId: targetUserId },
-      data: {
-        Status: 'Rejected',
-        UserIdPenyetuju: approverIdNum,
-        TimestampDisetujui: new Date(),
-      },
-    });
-
-    try {
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO evt.LOG_AKTIVITAS (LogId, Aksi, Deskripsi, UserId, Timestamp)
-        VALUES (
-          (SELECT ISNULL(MAX(LogId), 0) + 1 FROM evt.LOG_AKTIVITAS WITH (TABLOCKX)),
-          'REJECT_USER',
-          ${esc(`Pemerintah menolak akun: ${user.Email}. Alasan: ${Alasan || '-'}`)},
-          ${approverIdNum},
-          GETDATE()
-        )
-      `);
-    } catch (logErr: any) {
-      console.error('[SOAP-LOG-ERROR]', logErr?.message);
-    }
-
+    const res = await service.rejectUser(targetUserId, approverId);
     return {
       Success: true,
-      Message: `Akun ${user.Email} telah ditolak via SOAP`,
+      Message: res.message || 'User berhasil ditolak via Signed SOAP',
       UserId: targetUserId,
       Status: 'Rejected',
     };
   } catch (error: any) {
     return {
       Success: false,
-      Message: `Gagal menolak akun: ${error.message}`,
+      Message: error.message || 'Gagal menolak user',
     };
   }
 }
 
+/**
+ * 5. GetDeteksiAnomali [SIGNED SOAP]
+ */
 export async function getDeteksiAnomaliSoap(args: GetDeteksiAnomaliArgs) {
   try {
-    const threshold = Number(args.BatasKg || 150); // Default threshold 150 kg
-
-    const anomaliRecords = await prisma.penebusanPupuk.findMany({
-      where: {
-        Jumlah: {
-          gt: threshold,
-        },
-      },
-      include: {
-        Pupuk: true,
-        Petani: true,
-        Pengecer: true,
-      },
-      orderBy: {
-        Jumlah: 'desc',
-      },
-      take: 20,
-    });
-
-    const listAnomali = anomaliRecords.map((a) => {
-      const namaPetani = [a.Petani?.FirstName, a.Petani?.MiddleName, a.Petani?.LastName]
-        .filter(Boolean).join(' ');
-      const namaPengecer = [a.Pengecer?.FirstName, a.Pengecer?.MiddleName, a.Pengecer?.LastName]
-        .filter(Boolean).join(' ');
-
-      return {
-        TebusanId: a.TebusanId,
-        PetaniId: a.PetaniId,
-        NamaPetani: namaPetani,
-        NamaPengecer: namaPengecer,
-        PupukId: a.PupukId,
-        NamaPupuk: a.Pupuk?.JenisPupuk || `Pupuk #${a.PupukId}`,
-        JumlahKg: Number(a.Jumlah),
-        AlasanAnomali: `Penebusan sebesar ${a.Jumlah} kg melebihi batas wajar harian (${threshold} kg)`,
-        Timestamp: a.TimestampPenebusan.toISOString(),
-      };
-    });
+    const userId = Number(args.UserId) || 1;
+    const page = Number(args.Page) || 1;
+    const rawAnomalies = await service.getAnomalies(userId, page);
 
     return {
-      TotalAnomali: listAnomali.length,
-      BatasAmbangKg: threshold,
-      ListAnomali: listAnomali,
+      Success: true,
+      TotalAnomali: rawAnomalies.length,
+      ListAnomali: rawAnomalies.map((a: any) => ({
+        NotifikasiId: String(a.NotifikasiId || ''),
+        Jenis: a.Jenis || 'ANOMALI',
+        Judul: a.Judul || '',
+        Pesan: a.Pesan || '',
+        StatusDibaca: Boolean(a.StatusDibaca),
+        Timestamp: a.Timestamp ? new Date(a.Timestamp).toISOString() : '',
+        TotalRows: a.TotalRows || 0,
+      })),
     };
   } catch (error: any) {
     return {
+      Success: false,
       TotalAnomali: 0,
-      BatasAmbangKg: Number(args.BatasKg || 150),
       ListAnomali: [],
+      Error: error.message,
+    };
+  }
+}
+
+// ========================================================
+// 🔓 UNSIGNED SOAP OPERATIONS (Tidak butuh WS-Security)
+// ========================================================
+
+/**
+ * 6. GetStockTimeSeries [UNSIGNED SOAP]
+ */
+export async function getStockTimeSeriesSoap(args: GetStockTimeSeriesArgs) {
+  try {
+    const weeks = Number(args.Weeks) || 52;
+    const raw = await service.getStockTimeSeries(weeks);
+
+    return {
+      Success: true,
+      Series: raw.series || [],
+    };
+  } catch (error: any) {
+    return {
+      Success: false,
+      Series: [],
+      Error: error.message,
+    };
+  }
+}
+
+/**
+ * 7. GetUsersByStatus [UNSIGNED SOAP]
+ */
+export async function getUsersByStatusSoap(args: GetUsersByStatusArgs) {
+  try {
+    const status = args.Status || 'Active';
+    const page = Number(args.Page) || 1;
+    const pageSize = Number(args.PageSize) || 10;
+    const res = await service.getUsersByStatus(status, page, pageSize);
+
+    return {
+      Success: true,
+      TotalRows: res.totalRows,
+      Users: res.users.map((u: any) => ({
+        No: u.no,
+        UserId: u.userId,
+        NamaLengkap: u.namaLengkap,
+        Email: u.email,
+        Role: u.role,
+        CreatedAt: u.createdAt ? new Date(u.createdAt).toISOString() : '',
+      })),
+    };
+  } catch (error: any) {
+    return {
+      Success: false,
+      TotalRows: 0,
+      Users: [],
+      Error: error.message,
+    };
+  }
+}
+
+/**
+ * 8. GetTopNotifications [UNSIGNED SOAP]
+ */
+export async function getTopNotificationsSoap(args: GetTopNotificationsArgs) {
+  try {
+    const userId = Number(args.UserId) || 1;
+    const res = await service.getTopNotifications(userId);
+
+    return {
+      Success: true,
+      ListNotifikasi: res.map((n: any) => ({
+        NotifikasiId: n.NotifikasiId || '',
+        Jenis: n.Jenis || '',
+        Judul: n.Judul || '',
+        Pesan: n.Pesan || '',
+        Timestamp: n.Timestamp ? new Date(n.Timestamp).toISOString() : '',
+      })),
+    };
+  } catch (error: any) {
+    return {
+      Success: false,
+      ListNotifikasi: [],
+      Error: error.message,
+    };
+  }
+}
+
+/**
+ * 9. GetHelpRequests [UNSIGNED SOAP]
+ */
+export async function getHelpRequestsSoap(args: GetHelpRequestsArgs) {
+  try {
+    const page = Number(args.Page) || 1;
+    const res = await service.getHelpRequests(page);
+
+    return {
+      Success: true,
+      Total: res.length,
+      ListBantuan: res.map((b: any) => ({
+        No: b.No,
+        BantuanId: b.BantuanId || 0,
+        FirstName: b.FirstName || '',
+        LastName: b.LastName || '',
+        Email: b.Email || '',
+        Topik: b.Topik || '',
+        Ringkasan: b.Ringkasan || '',
+        Status: b.Status || '',
+        Timestamp: b.Timestamp ? new Date(b.Timestamp).toISOString() : '',
+        TotalRows: b.TotalRows || 0,
+      })),
+    };
+  } catch (error: any) {
+    return {
+      Success: false,
+      Total: 0,
+      ListBantuan: [],
+      Error: error.message,
     };
   }
 }

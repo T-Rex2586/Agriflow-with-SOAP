@@ -351,3 +351,386 @@ restBridgeRouter.get('/pupuk', async (_req: Request, res: Response) => {
     })),
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. DISTRIBUTOR — Shipment (Pengiriman Pupuk)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /api/distributor/shipments — Buat pengiriman baru
+restBridgeRouter.post(['/distributor/shipments', '/distributor/pengiriman'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { pengecerId, pupukId, jumlah } = req.body;
+  const result = await createKirimanPupukSoap({
+    UserIdDistributor: userId,
+    UserIdPengecer: Number(pengecerId),
+    PupukId: Number(pupukId),
+    Jumlah: Number(jumlah),
+  });
+
+  if (!result.Success) return res.status(400).json({ success: false, message: result.Message });
+  return res.status(201).json({ success: true, message: result.Message, data: result });
+});
+
+// GET /api/distributor/shipments/recent — Kiriman terbaru
+restBridgeRouter.get(['/distributor/shipments/recent', '/distributor/pengiriman/recent'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const result = await getKirimanListSoap({ UserId: userId, Role: 'DISTRIBUTOR' });
+  const recent = (result.ListKiriman || []).slice(0, 5);
+  return res.json({ success: true, data: recent });
+});
+
+// GET /api/distributor/shipments/history — Riwayat semua kiriman
+restBridgeRouter.get(['/distributor/shipments/history', '/distributor/pengiriman/history'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const page = parseInt(req.query.page as string) || 1;
+  const result = await getKirimanListSoap({ UserId: userId, Role: 'DISTRIBUTOR' });
+  const pageSize = 10;
+  const start = (page - 1) * pageSize;
+  const paged = (result.ListKiriman || []).slice(start, start + pageSize);
+
+  return res.json({
+    success: true,
+    data: {
+      items: paged,
+      total: result.Total,
+      page,
+      totalPages: Math.ceil(result.Total / pageSize),
+    },
+  });
+});
+
+// GET /api/distributor/validate-pengecer/:pengecerId — Validasi pengecer sebelum kirim
+restBridgeRouter.get(['/distributor/validate-pengecer/:pengecerId', '/distributor/validasi-pengecer/:pengecerId'], async (req: Request, res: Response) => {
+  const pengecerId = Number(req.params.pengecerId);
+  if (isNaN(pengecerId)) return res.status(400).json({ success: false, message: 'pengecerId tidak valid' });
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { UserId: pengecerId },
+      include: { Role: true },
+    });
+
+    if (!user) return res.status(404).json({ success: false, message: 'Pengecer tidak ditemukan' });
+    if (user.Role.RoleName.toUpperCase() !== 'PENGECER') {
+      return res.status(400).json({ success: false, message: 'User bukan PENGECER' });
+    }
+    if (user.Status !== 'Active') {
+      return res.status(400).json({ success: false, message: `Status pengecer: ${user.Status}` });
+    }
+
+    const nama = [user.FirstName, user.MiddleName, user.LastName].filter(Boolean).join(' ');
+    return res.json({
+      success: true,
+      data: {
+        pengecerId: user.UserId,
+        nama,
+        email: user.Email,
+        status: user.Status,
+        role: user.Role.RoleName,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/distributor/pengecer/search — Cari pengecer by nama
+restBridgeRouter.get('/distributor/pengecer/search', async (req: Request, res: Response) => {
+  const q = String(req.query.q || '').trim();
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        Status: 'Active',
+        Role: { RoleName: 'PENGECER' },
+        OR: [
+          { FirstName: { contains: q } },
+          { LastName: { contains: q } },
+          { Email: { contains: q } },
+        ],
+      },
+      include: { Role: true },
+      take: 20,
+    });
+
+    return res.json({
+      success: true,
+      data: users.map((u) => ({
+        pengecerId: u.UserId,
+        nama: [u.FirstName, u.MiddleName, u.LastName].filter(Boolean).join(' '),
+        email: u.Email,
+        status: u.Status,
+      })),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/distributor/stock/:pupukId — Stok spesifik pupuk
+restBridgeRouter.get(['/distributor/stock/:pupukId', '/distributor/stok/:pupukId'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const pupukId = Number(req.params.pupukId);
+  const result = await cekStokSoap({ UserId: userId });
+  const item = (result.ListStok || []).find((s: any) => Number(s.PupukId) === pupukId);
+
+  if (!item) return res.status(404).json({ success: false, message: 'Stok pupuk tidak ditemukan' });
+  return res.json({ success: true, data: item });
+});
+
+// GET /api/distributor/stock/history/incoming — Riwayat stok masuk distributor
+restBridgeRouter.get(['/distributor/stock/history/incoming', '/distributor/stok/history/masuk'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const result = await getRiwayatStokSoap({ UserId: userId });
+  const masuk = (result.ListRiwayat || []).filter((r: any) => r.TipePerubahan === 'Stok Masuk');
+  return res.json({ success: true, data: masuk });
+});
+
+// GET /api/distributor/stock/history/outgoing — Riwayat stok keluar distributor
+restBridgeRouter.get(['/distributor/stock/history/outgoing', '/distributor/stok/history/keluar'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const result = await getRiwayatStokSoap({ UserId: userId });
+  const keluar = (result.ListRiwayat || []).filter((r: any) => r.TipePerubahan === 'Stok Keluar');
+  return res.json({ success: true, data: keluar });
+});
+
+// POST /api/distributor/stock/add — Tambah stok masuk distributor
+restBridgeRouter.post(['/distributor/stock/add', '/distributor/stok/add'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { pupukId, jumlahMasuk, keterangan } = req.body;
+  const result = await adjustStokSoap({
+    UserId: userId,
+    PupukId: Number(pupukId),
+    JumlahPenyesuaian: Number(jumlahMasuk),
+    Keterangan: keterangan || 'Penambahan stok masuk',
+  });
+
+  if (!result.Success) return res.status(400).json({ success: false, message: result.Message });
+  return res.json({ success: true, data: result });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12. PENGECER — Kiriman & Penebusan
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/pengecer/receipts/recent — Kiriman terbaru ke pengecer
+restBridgeRouter.get(['/pengecer/receipts/recent', '/pengecer/penerimaan/recent'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const result = await getKirimanListSoap({ UserId: userId, Role: 'PENGECER' });
+  const recent = (result.ListKiriman || []).slice(0, 5);
+  return res.json({ success: true, data: recent });
+});
+
+// GET /api/pengecer/receipts/history — Riwayat penerimaan kiriman
+restBridgeRouter.get(['/pengecer/receipts/history', '/pengecer/penerimaan/history'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const page = parseInt(req.query.page as string) || 1;
+  const result = await getKirimanListSoap({ UserId: userId, Role: 'PENGECER' });
+  const pageSize = 10;
+  const start = (page - 1) * pageSize;
+  const paged = (result.ListKiriman || []).slice(start, start + pageSize);
+
+  return res.json({
+    success: true,
+    data: {
+      items: paged,
+      total: result.Total,
+      page,
+      totalPages: Math.ceil(result.Total / pageSize),
+    },
+  });
+});
+
+// GET /api/pengecer/kiriman/search — Cari kiriman by ID atau nama distributor
+restBridgeRouter.get('/pengecer/kiriman/search', async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const q = String(req.query.q || '').trim().toLowerCase();
+  const result = await getKirimanListSoap({ UserId: userId, Role: 'PENGECER' });
+  const filtered = (result.ListKiriman || []).filter((k: any) =>
+    String(k.KirimanId).includes(q) ||
+    (k.NamaDistributor || '').toLowerCase().includes(q) ||
+    (k.NamaPupuk || '').toLowerCase().includes(q)
+  );
+
+  return res.json({ success: true, data: filtered });
+});
+
+// GET /api/pengecer/validate-shipment/:kirimanId — Validasi kiriman sebelum diterima
+restBridgeRouter.get(['/pengecer/validate-shipment/:kirimanId', '/pengecer/validasi-kiriman/:kirimanId'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const kirimanId = Number(req.params.kirimanId);
+  if (isNaN(kirimanId)) return res.status(400).json({ success: false, message: 'kirimanId tidak valid' });
+
+  try {
+    const kiriman = await prisma.kirimanPupuk.findUnique({
+      where: { KirimanId: kirimanId },
+      include: { Pupuk: true, Distributor: true },
+    });
+
+    if (!kiriman) return res.status(404).json({ success: false, message: 'Kiriman tidak ditemukan' });
+    if (kiriman.UserIdPengecer !== userId) return res.status(403).json({ success: false, message: 'Kiriman bukan untuk akun ini' });
+
+    return res.json({
+      success: true,
+      data: {
+        kirimanId: kiriman.KirimanId,
+        status: kiriman.Status,
+        namaDistributor: [kiriman.Distributor?.FirstName, kiriman.Distributor?.LastName].filter(Boolean).join(' '),
+        namaPupuk: kiriman.Pupuk?.JenisPupuk,
+        jumlahDikirim: Number(kiriman.JumlahDikirim),
+        timestampDikirim: kiriman.TimestampDikirim,
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/pengecer/receipts — Terima kiriman dari distributor
+restBridgeRouter.post(['/pengecer/receipts', '/pengecer/terima-stok'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { kirimanId, jumlahDiterima } = req.body;
+  const result = await terimaKirimanPupukSoap({
+    KirimanId: Number(kirimanId),
+    UserIdPengecer: userId,
+    JumlahDiterima: jumlahDiterima ? Number(jumlahDiterima) : undefined,
+  });
+
+  if (!result.Success) return res.status(400).json({ success: false, message: result.Message });
+  return res.status(201).json({ success: true, message: result.Message, data: result });
+});
+
+// POST /api/pengecer/stock/add — Tambah stok pengecer (tanpa kiriman)
+restBridgeRouter.post(['/pengecer/stock/add', '/pengecer/stok/add'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { pupukId, jumlahMasuk, keterangan } = req.body;
+  const result = await adjustStokSoap({
+    UserId: userId,
+    PupukId: Number(pupukId),
+    JumlahPenyesuaian: Number(jumlahMasuk),
+    Keterangan: keterangan || 'Penambahan stok pengecer',
+  });
+
+  if (!result.Success) return res.status(400).json({ success: false, message: result.Message });
+  return res.json({ success: true, data: result });
+});
+
+// GET /api/pengecer/redemptions/history — Riwayat penebusan dengan pagination
+restBridgeRouter.get(['/pengecer/redemptions/history', '/pengecer/penebusan/history'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const result = await getRiwayatPenebusanSoap({ UserIdPengecer: userId });
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = 10;
+  const list = result.ListRiwayat || [];
+  const start = (page - 1) * pageSize;
+
+  return res.json({
+    success: true,
+    data: {
+      items: list.slice(start, start + pageSize),
+      total: list.length,
+      page,
+      totalPages: Math.ceil(list.length / pageSize),
+    },
+  });
+});
+
+// GET /api/pengecer/validate-petani/:petaniId — Validasi petani sebelum penebusan
+restBridgeRouter.get(['/pengecer/validate-petani/:petaniId', '/pengecer/validasi-petani/:petaniId'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const petaniId = req.params.petaniId;
+  const [petaniRes, kuotaRes] = await Promise.all([
+    getPetaniByNIKSoap({ NIK: petaniId }),
+    cekKuotaPetaniSoap({ PetaniId: petaniId }),
+  ]);
+
+  if (!petaniRes.Found) {
+    return res.status(404).json({ success: false, message: 'Petani tidak ditemukan atau NIK tidak terdaftar' });
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      petaniId: petaniRes.PetaniId,
+      nik: petaniRes.NIK,
+      namaLengkap: petaniRes.NamaLengkap,
+      nomorHp: petaniRes.NomorHp,
+      alamat: petaniRes.Alamat,
+      desaKelurahan: petaniRes.DesaKelurahan,
+      kecamatan: petaniRes.Kecamatan,
+      kabupatenKota: petaniRes.KabupatenKota,
+      provinsi: petaniRes.Provinsi,
+      luasLahan: petaniRes.LuasLahan,
+      sektor: petaniRes.Sektor,
+      status: petaniRes.Status,
+      kuota: (kuotaRes.ListKuota || []).map((k: any) => ({
+        pupukId: k.PupukId,
+        namaPupuk: k.NamaPupuk,
+        sisaKuota: k.SisaKuota,
+      })),
+    },
+  });
+});
+
+// POST /api/pengecer/redemptions — Buat transaksi penebusan pupuk
+restBridgeRouter.post(['/pengecer/redemptions', '/pengecer/penebusan'], async (req: Request, res: Response) => {
+  const user = getUserFromReq(req);
+  const userId = Number(user?.userId);
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+  const { petaniId, pupukId, jumlah } = req.body;
+  const result = await penebusanPupukSoap({
+    UserIdPengecer: userId,
+    PetaniId: String(petaniId),
+    PupukId: Number(pupukId),
+    Jumlah: Number(jumlah),
+  });
+
+  if (!result.Success) return res.status(400).json({ success: false, message: result.Message, error: result.Message });
+  return res.status(201).json({ success: true, message: result.Message, data: result });
+});
+

@@ -10,6 +10,10 @@ import {
   approveUserSoap,
   rejectUserSoap,
   getDeteksiAnomaliSoap,
+  getStockTimeSeriesSoap,
+  getUsersByStatusSoap,
+  getTopNotificationsSoap,
+  getHelpRequestsSoap,
 } from './services/pemerintah.soap';
 import { createBantuanSoap, getBantuanListSoap } from './services/bantuan.soap';
 import { verifyWsSecurityHeader, extractWsSecurityHeader } from './services/ws-security';
@@ -22,27 +26,42 @@ import { verifyWsSecurityHeader, extractWsSecurityHeader } from './services/ws-s
  * Karena node-soap versi lama meneruskan Security header sebagai args['Security'] atau
  * args['wsse:Security'], kita periksa beberapa kemungkinan path.
  */
-function extractSecurityFromArgs(args: any): string | null {
-  // node-soap biasanya meletakkan Security header di args['Security']
+function extractSecurityFromArgs(args: any, headers?: any, req?: any): string | null {
+  // 1. Coba dari req.wsSecurityHeaderXml (disimpan oleh middleware raw XML)
+  if (req?.wsSecurityHeaderXml) {
+    return req.wsSecurityHeaderXml;
+  }
+
+  // 2. Coba dari headers SOAP yang diparse oleh node-soap
+  if (headers) {
+    if (typeof headers === 'string') return headers;
+    if (headers.Security) {
+      return typeof headers.Security === 'string' ? headers.Security : JSON.stringify(headers.Security);
+    }
+    if (headers['wsse:Security']) {
+      return typeof headers['wsse:Security'] === 'string' ? headers['wsse:Security'] : JSON.stringify(headers['wsse:Security']);
+    }
+  }
+
+  // 3. node-soap biasanya meletakkan Security header di args['Security']
   if (args?.Security) {
     if (typeof args.Security === 'string') return args.Security;
-    // Bisa berupa objek yang sudah diparse — serialize ulang ke string sederhana
     return JSON.stringify(args.Security);
   }
 
-  // Alternatif: lewat custom header yang dikirim frontend
+  // 4. Alternatif: lewat custom header yang dikirim frontend
   if (args?.['wsse:Security']) {
     return typeof args['wsse:Security'] === 'string'
       ? args['wsse:Security']
       : JSON.stringify(args['wsse:Security']);
   }
 
-  // Coba dari _rawXml jika tersedia
+  // 5. Coba dari _rawXml jika tersedia
   if (args?._rawXml) {
     return extractWsSecurityHeader(args._rawXml);
   }
 
-  // Coba dari field WsSecurityHeader yang dikirim sebagai custom field oleh frontend
+  // 6. Coba dari field WsSecurityHeader yang dikirim sebagai field oleh frontend
   if (args?.WsSecurityHeader) {
     return args.WsSecurityHeader;
   }
@@ -57,9 +76,11 @@ function extractSecurityFromArgs(args: any): string | null {
  */
 function requireSignedSoap(
   args: any,
-  operationName: string
+  operationName: string,
+  headers?: any,
+  req?: any
 ): { blocked: boolean; response?: any } {
-  const securityXml = extractSecurityFromArgs(args);
+  const securityXml = extractSecurityFromArgs(args, headers, req);
   const result = verifyWsSecurityHeader(securityXml);
 
   if (!result.valid) {
@@ -184,39 +205,60 @@ export const agriflowSoapService = {
       },
 
       // 7. Pemerintah & Monitoring Operations (🔐 SIGNED SOAP — Wajib WS-Security)
-      GetDashboardPemerintah: async (args: any) => {
+      GetDashboardPemerintah: async (args: any, cb?: any, headers?: any, req?: any) => {
         console.log('[SOAP-REQ] GetDashboardPemerintah [SIGNED SOAP]');
-        const guard = requireSignedSoap(args, 'GetDashboardPemerintah');
+        const guard = requireSignedSoap(args, 'GetDashboardPemerintah', headers, req);
         if (guard.blocked) return guard.response;
         return await getDashboardPemerintahSoap(args);
       },
 
-      GetPendingUsers: async (args: any) => {
+      GetPendingUsers: async (args: any, cb?: any, headers?: any, req?: any) => {
         console.log('[SOAP-REQ] GetPendingUsers [SIGNED SOAP]');
-        const guard = requireSignedSoap(args, 'GetPendingUsers');
+        const guard = requireSignedSoap(args, 'GetPendingUsers', headers, req);
         if (guard.blocked) return guard.response;
         return await getPendingUsersSoap(args);
       },
 
-      ApproveUser: async (args: any) => {
+      ApproveUser: async (args: any, cb?: any, headers?: any, req?: any) => {
         console.log('[SOAP-REQ] ApproveUser Target:', args?.UserId, 'Approver:', args?.ApproverId, '[SIGNED SOAP]');
-        const guard = requireSignedSoap(args, 'ApproveUser');
+        const guard = requireSignedSoap(args, 'ApproveUser', headers, req);
         if (guard.blocked) return guard.response;
         return await approveUserSoap(args);
       },
 
-      RejectUser: async (args: any) => {
+      RejectUser: async (args: any, cb?: any, headers?: any, req?: any) => {
         console.log('[SOAP-REQ] RejectUser Target:', args?.UserId, 'Approver:', args?.ApproverId, '[SIGNED SOAP]');
-        const guard = requireSignedSoap(args, 'RejectUser');
+        const guard = requireSignedSoap(args, 'RejectUser', headers, req);
         if (guard.blocked) return guard.response;
         return await rejectUserSoap(args);
       },
 
-      GetDeteksiAnomali: async (args: any) => {
+      GetDeteksiAnomali: async (args: any, cb?: any, headers?: any, req?: any) => {
         console.log('[SOAP-REQ] GetDeteksiAnomali Threshold:', args?.BatasKg, '[SIGNED SOAP]');
-        const guard = requireSignedSoap(args, 'GetDeteksiAnomali');
+        const guard = requireSignedSoap(args, 'GetDeteksiAnomali', headers, req);
         if (guard.blocked) return guard.response;
         return await getDeteksiAnomaliSoap(args);
+      },
+
+      // Operasi Pembacaan / Monitoring Pemerintah (🔓 UNSIGNED SOAP — Tanpa WS-Security)
+      GetStockTimeSeries: async (args: any) => {
+        console.log('[SOAP-REQ] GetStockTimeSeries [UNSIGNED SOAP]');
+        return await getStockTimeSeriesSoap(args);
+      },
+
+      GetUsersByStatus: async (args: any) => {
+        console.log('[SOAP-REQ] GetUsersByStatus [UNSIGNED SOAP]:', args?.Status);
+        return await getUsersByStatusSoap(args);
+      },
+
+      GetTopNotifications: async (args: any) => {
+        console.log('[SOAP-REQ] GetTopNotifications [UNSIGNED SOAP]:', args?.UserId);
+        return await getTopNotificationsSoap(args);
+      },
+
+      GetHelpRequests: async (args: any) => {
+        console.log('[SOAP-REQ] GetHelpRequests [UNSIGNED SOAP] Page:', args?.Page);
+        return await getHelpRequestsSoap(args);
       },
 
       // 8. Helpdesk / Bantuan Operations

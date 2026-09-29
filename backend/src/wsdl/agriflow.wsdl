@@ -643,6 +643,102 @@
         </xsd:complexType>
       </xsd:element>
 
+      <!-- 24. GetStockTimeSeries -->
+      <xsd:element name="GetStockTimeSeriesRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Weeks" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemStockSeries">
+        <xsd:sequence>
+          <xsd:element name="tanggalMulai" type="xsd:string"/>
+          <xsd:element name="distributorKg" type="xsd:decimal"/>
+          <xsd:element name="pengecerKg" type="xsd:decimal"/>
+          <xsd:element name="petaniKg" type="xsd:decimal"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetStockTimeSeriesResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Series" type="tns:ItemStockSeries" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 25. GetUsersByStatus -->
+      <xsd:element name="GetUsersByStatusRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Status" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="Page" type="xsd:int" minOccurs="0"/>
+            <xsd:element name="PageSize" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="ItemUserByStatus">
+        <xsd:sequence>
+          <xsd:element name="No" type="xsd:int"/>
+          <xsd:element name="UserId" type="xsd:int"/>
+          <xsd:element name="NamaLengkap" type="xsd:string"/>
+          <xsd:element name="Email" type="xsd:string"/>
+          <xsd:element name="Role" type="xsd:string"/>
+          <xsd:element name="CreatedAt" type="xsd:string"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="GetUsersByStatusResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="TotalRows" type="xsd:int"/>
+            <xsd:element name="Users" type="tns:ItemUserByStatus" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 26. GetTopNotifications -->
+      <xsd:element name="GetTopNotificationsRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="UserId" type="xsd:int"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetTopNotificationsResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="ListNotifikasi" type="tns:ItemNotifikasi" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- 27. GetHelpRequests -->
+      <xsd:element name="GetHelpRequestsRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Page" type="xsd:int" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetHelpRequestsResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="Success" type="xsd:boolean"/>
+            <xsd:element name="Total" type="xsd:int"/>
+            <xsd:element name="ListBantuan" type="tns:ItemBantuan" minOccurs="0" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
     </xsd:schema>
   </wsdl:types>
 
@@ -720,6 +816,18 @@
 
   <wsdl:message name="GetBantuanListSoapIn"><wsdl:part name="parameters" element="tns:GetBantuanListRequest"/></wsdl:message>
   <wsdl:message name="GetBantuanListSoapOut"><wsdl:part name="parameters" element="tns:GetBantuanListResponse"/></wsdl:message>
+
+  <wsdl:message name="GetStockTimeSeriesSoapIn"><wsdl:part name="parameters" element="tns:GetStockTimeSeriesRequest"/></wsdl:message>
+  <wsdl:message name="GetStockTimeSeriesSoapOut"><wsdl:part name="parameters" element="tns:GetStockTimeSeriesResponse"/></wsdl:message>
+
+  <wsdl:message name="GetUsersByStatusSoapIn"><wsdl:part name="parameters" element="tns:GetUsersByStatusRequest"/></wsdl:message>
+  <wsdl:message name="GetUsersByStatusSoapOut"><wsdl:part name="parameters" element="tns:GetUsersByStatusResponse"/></wsdl:message>
+
+  <wsdl:message name="GetTopNotificationsSoapIn"><wsdl:part name="parameters" element="tns:GetTopNotificationsRequest"/></wsdl:message>
+  <wsdl:message name="GetTopNotificationsSoapOut"><wsdl:part name="parameters" element="tns:GetTopNotificationsResponse"/></wsdl:message>
+
+  <wsdl:message name="GetHelpRequestsSoapIn"><wsdl:part name="parameters" element="tns:GetHelpRequestsRequest"/></wsdl:message>
+  <wsdl:message name="GetHelpRequestsSoapOut"><wsdl:part name="parameters" element="tns:GetHelpRequestsResponse"/></wsdl:message>
 
   <!-- ========================================== -->
   <!-- PORT TYPE DEFINITION                       -->
@@ -843,6 +951,26 @@
     <wsdl:operation name="GetBantuanList">
       <wsdl:input message="tns:GetBantuanListSoapIn"/>
       <wsdl:output message="tns:GetBantuanListSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetStockTimeSeries">
+      <wsdl:input message="tns:GetStockTimeSeriesSoapIn"/>
+      <wsdl:output message="tns:GetStockTimeSeriesSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetUsersByStatus">
+      <wsdl:input message="tns:GetUsersByStatusSoapIn"/>
+      <wsdl:output message="tns:GetUsersByStatusSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetTopNotifications">
+      <wsdl:input message="tns:GetTopNotificationsSoapIn"/>
+      <wsdl:output message="tns:GetTopNotificationsSoapOut"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetHelpRequests">
+      <wsdl:input message="tns:GetHelpRequestsSoapIn"/>
+      <wsdl:output message="tns:GetHelpRequestsSoapOut"/>
     </wsdl:operation>
   </wsdl:portType>
 
@@ -992,6 +1120,30 @@
 
     <wsdl:operation name="GetBantuanList">
       <soap:operation soapAction="http://agriflow.id/soap/GetBantuanList"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetStockTimeSeries">
+      <soap:operation soapAction="http://agriflow.id/soap/GetStockTimeSeries"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetUsersByStatus">
+      <soap:operation soapAction="http://agriflow.id/soap/GetUsersByStatus"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetTopNotifications">
+      <soap:operation soapAction="http://agriflow.id/soap/GetTopNotifications"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetHelpRequests">
+      <soap:operation soapAction="http://agriflow.id/soap/GetHelpRequests"/>
       <wsdl:input><soap:body use="literal"/></wsdl:input>
       <wsdl:output><soap:body use="literal"/></wsdl:output>
     </wsdl:operation>

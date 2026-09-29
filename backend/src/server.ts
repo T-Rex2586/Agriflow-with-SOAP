@@ -1,43 +1,20 @@
-import express from 'express';
-import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import * as soap from 'soap';
+import app from './app';
 import { config } from './config/env';
 import { agriflowSoapService } from './soap-service';
 import { extractWsSecurityHeader } from './services/ws-security';
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(process.cwd(), 'public')));
-
-// Mount REST Compatibility Bridge (sehingga frontend Vercel dapat berkomunikasi langsung ke backend SOAP)
-import { restBridgeRouter } from './rest-bridge';
-app.use('/api', restBridgeRouter);
+import { errorHandler } from './common/middleware/error.middleware';
 
 // Path WSDL
 const wsdlPath = path.join(__dirname, 'wsdl', 'agriflow.wsdl');
 const wsdlXml = fs.readFileSync(wsdlPath, 'utf8');
 
-// Raw WSDL XML route for easy viewing
+// Raw WSDL XML route for easy viewing & tooling
 app.get('/soap/agriflow.wsdl', (_req, res) => {
   res.header('Content-Type', 'text/xml');
   res.send(wsdlXml);
-});
-
-// Health check endpoint
-app.get('/health', (_req, res) => {
-  res.json({
-    status: 'OK',
-    protocol: 'SOAP 1.1',
-    service: 'AgriFlow 2 Web Services',
-    endpoint: `http://localhost:${config.port}/soap/agriflow`,
-    wsdl: `http://localhost:${config.port}/soap/agriflow?wsdl`,
-    security: 'WS-Security HMAC-SHA256 Signed SOAP (admin operations)',
-  });
 });
 
 /**
@@ -46,6 +23,15 @@ app.get('/health', (_req, res) => {
  * ke dalam args agar soap-service.ts dapat memvalidasinya.
  */
 app.use('/soap/agriflow', (req, res, next) => {
+  // Always allow CORS preflight & headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, SOAPAction, Authorization, X-Requested-With, wsse, Accept');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
   if (req.method !== 'POST') return next();
 
   let rawBody = '';
@@ -54,24 +40,29 @@ app.use('/soap/agriflow', (req, res, next) => {
   req.on('end', () => {
     const securityHeaderXml = extractWsSecurityHeader(rawBody);
     if (securityHeaderXml) {
-      // Simpan di res.locals sehingga handler SOAP bisa membacanya
       (res as any).wsSecurityHeaderXml = securityHeaderXml;
       (req as any).wsSecurityHeaderXml = securityHeaderXml;
     }
     (req as any).rawSoapBody = rawBody;
+    (req as any).body = Buffer.from(rawBody, 'utf8');
     next();
   });
 });
+
+// Global error handler
+app.use(errorHandler);
 
 const server = app.listen(config.port, () => {
   // Inisialisasi SOAP Listener
   soap.listen(app, '/soap/agriflow', agriflowSoapService, wsdlXml, () => {
     console.log(`\n======================================================`);
-    console.log(`🌾 AgriFlow 2 - SOAP Web Service is RUNNING!`);
+    console.log(`🌾 AgriFlow 2 - Hybrid REST & SOAP Web Service RUNNING!`);
+    console.log(`🚀 REST API Base : http://localhost:${config.port}/api`);
     console.log(`📡 SOAP Endpoint : http://localhost:${config.port}/soap/agriflow`);
     console.log(`📄 WSDL Contract : http://localhost:${config.port}/soap/agriflow?wsdl`);
-    console.log(`🔐 WS-Security   : HMAC-SHA256 Signed SOAP (operasi admin PEMERINTAH)`);
-    console.log(`💻 Web UI Tester : http://localhost:${config.port}/`);
+    console.log(`🔐 WS-Security   : HMAC-SHA256 Signed SOAP (Khusus Operasi Admin PEMERINTAH)`);
+    console.log(`🔓 Unsigned SOAP : Operasi Baca / Monitoring PEMERINTAH`);
+    console.log(`📚 Swagger Docs  : http://localhost:${config.port}/api-docs`);
     console.log(`======================================================\n`);
   });
 });
